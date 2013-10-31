@@ -27,7 +27,7 @@ class BBCharts : public QObject
     Q_PROPERTY(Image image READ image NOTIFY imageChanged);
 
 public:
-    BBCharts(Application *app);
+    BBCharts(QObject * parent = 0);
     virtual ~BBCharts() {}
     Image image() const;
     void setImage(const QImage& img);

@@ -2,6 +2,11 @@
 #include "BBCharts.hpp"
 #include <qdebug.h>
 
+BBCharts::BBCharts(QObject * parent) :
+		QObject(parent) {
+	qRegisterMetaType<Image>("Image");
+}
+
 bb::ImageData fromQImage(const QImage &qImage) {
 	bb::ImageData imageData(bb::PixelFormat::RGBA_Premultiplied, qImage.width(),
 			qImage.height());
@@ -70,12 +75,4 @@ void BBCharts::changePicture() {
 
 }
 
-BBCharts::BBCharts(bb::cascades::Application *app) :
-		QObject(app) {
-	qRegisterMetaType<Image>("Image");
-	QmlDocument *qml = QmlDocument::create("asset:///main.qml").parent(this);
-	qml->setContextProperty("_controller", this);
-	AbstractPane *root = qml->createRootObject<AbstractPane>();
-	app->setScene(root);
-}
 

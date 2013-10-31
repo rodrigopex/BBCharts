@@ -11,13 +11,13 @@ Page {
         Button {
             text: "change graph!"
             onClicked: {
-                _controller.changePicture()
+                _chartManager.changePicture()
                 }
         }
         ImageView {
             objectName: "myImage";
             id: myImage
-            image: _controller.image
+            image: _chartManager.image
         }
     }
 //    onCreationCompleted: {
