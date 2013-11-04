@@ -4,7 +4,16 @@
 
 BBCharts::BBCharts(QObject * parent) :
 		QObject(parent) {
-	qRegisterMetaType<Image>("Image");
+	m_imageTracker = new ImageTracker;
+	bool result = connect(m_imageTracker, SIGNAL(imageChanged(QVariant)), this,
+			SIGNAL(imageChanged(QVariant)));
+	Q_ASSERT(result);
+	result = connect(m_imageTracker,
+			SIGNAL(stateChanged(bb::cascades::ResourceState::Type)), this,
+			SLOT(onStateChanged(bb::cascades::ResourceState::Type)));
+	Q_ASSERT(result);
+	Q_UNUSED(result);
+	this->loadImage("zero_chart.amd");
 }
 
 bb::ImageData fromQImage(const QImage &qImage) {
@@ -25,54 +34,58 @@ bb::ImageData fromQImage(const QImage &qImage) {
 	return imageData;
 }
 
-Image BBCharts::image() const {
-	return this->m_image;
-}
-
-void BBCharts::setImage(const QImage& img) {
-	if (!img.isNull()) {
-		Image tmp(fromQImage(img));
-		m_image = tmp;
-		emit this->imageChanged();
+void BBCharts::onStateChanged(bb::cascades::ResourceState::Type state) {
+	if (state == bb::cascades::ResourceState::Loaded) {
+		qDebug() << "Trying to remove the generated file:" << m_currentFilePath;
+		if(m_currentFilePath.startsWith("file:///"))
+			QFile::remove(m_currentFilePath.replace("file://", ""));
 	}
 }
 
-void BBCharts::changePicture() {
-	QPainterPath path;
-	path.moveTo(0, 0);
-	path.lineTo(30, 50);
-	path.lineTo(40, 40);
-	path.lineTo(50, 60);
-	path.lineTo(70, 50);
-	path.lineTo(90, 90);
-	path.lineTo(100, 20);
-	path.lineTo(110, 40);
-	path.lineTo(120, 30);
-	path.lineTo(130, 50);
-	path.lineTo(140, 100);
-	path.lineTo(150, 80);
-	path.lineTo(180, 20);
-	path.lineTo(200, 0);
-	path.closeSubpath();
-	path.setFillRule(Qt::WindingFill);
-//	path.cubicTo(80, 0, 50, 50, 80, 80);
-
-	QImage tmp(QSize(720, 720), QImage::Format_ARGB32_Premultiplied);
-	tmp.fill(QColor("#00aa00"));
-	QPainter ctx;
-	ctx.beginNativePainting();
-	ctx.begin(&tmp);
-	ctx.scale(3.0, 3.0);
-	ctx.setRenderHint(QPainter::Antialiasing);
-	ctx.setPen(QPen(QColor("#555555"), 1,Qt::SolidLine, Qt::FlatCap, Qt::RoundJoin));
-	ctx.setBrush(QBrush(QColor(Qt::blue), Qt::SolidPattern));
-//	ctx.drawRect(QRect(0, 0, 50, 50));
-//	ctx.drawRect(QRect(30, 30, 50, 50));
-	ctx.drawPath(path);
-	ctx.rotate(180);
-	ctx.end();
-	this->setImage(tmp);
-
+bb::cascades::Image BBCharts::image() const {
+	return m_imageTracker->image();
 }
 
+void BBCharts::loadImage(const QString& imageSource) {
+	m_currentFilePath = imageSource;
+	m_imageTracker->setImageSource(QUrl(imageSource));
+}
 
+int graphY(int y, int height, int max) {
+	return height * (1 - y / (double) max);
+}
+
+void BBCharts::drawChart() {
+	int width = 720;
+	int height = 300;
+	int max = 5000;
+	int step = width / 7;
+
+	QImage tmp(QSize(width, height), QImage::Format_ARGB32_Premultiplied);
+	QPainterPath path;
+
+	int currentY = rand() % max;
+	path.moveTo(0, graphY(currentY, height, max));
+	for (int i = step; i < width; i += step) {
+		currentY = rand() % max;
+		qDebug() << currentY;
+		path.lineTo(i, graphY(currentY, height, max));
+	}
+
+	QPainter ctx;
+	ctx.begin(&tmp);
+	ctx.setRenderHint(QPainter::Antialiasing);
+	ctx.setPen(
+			QPen(QColor("#00a8df"), 3, Qt::SolidLine, Qt::FlatCap,
+					Qt::RoundJoin));
+	ctx.drawPath(path);
+	ctx.end();
+
+	QString destinty = QDir::tempPath()
+			+ QString("/chart%1.png").arg(rand() % 500);
+	qDebug() << destinty;
+	if (tmp.save(destinty, "PNG")) {
+		qDebug() << "Image save successfully!";
+		this->loadImage("file://" + destinty);
+	}
+}

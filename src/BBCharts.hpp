@@ -9,6 +9,9 @@
 #include <bb/cascades/QmlDocument>
 #include <bb/cascades/AbstractPane>
 #include <bb/cascades/ImageView>
+#include <bb/cascades/ResourceState>
+#include <bb/cascades/ImageTracker>
+
 
 #include <bb/ImageData>
 #include <Qt/qimage.h>
@@ -23,19 +26,21 @@ using namespace bb::cascades;
 class BBCharts : public QObject
 {
     Q_OBJECT
-
-    Q_PROPERTY(Image image READ image NOTIFY imageChanged);
+    Q_PROPERTY(bb::cascades::Image image READ image NOTIFY imageChanged);
 
 public:
     BBCharts(QObject * parent = 0);
     virtual ~BBCharts() {}
-    Image image() const;
-    void setImage(const QImage& img);
-    Q_INVOKABLE void changePicture();
+    bb::cascades::Image image() const;
+    void loadImage(const QString& imageSource);
+    Q_INVOKABLE void drawChart();
 Q_SIGNALS:
-    void imageChanged();
+    void imageChanged(QVariant image);
+private slots:
+	void onStateChanged(bb::cascades::ResourceState::Type type);
 private:
-    Image m_image;
+    bb::cascades::ImageTracker * m_imageTracker;
+    QString m_currentFilePath;
 };
 
 

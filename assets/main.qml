@@ -1,7 +1,5 @@
-// Default empty project template
 import bb.cascades 1.0
 
-// creates one page with a label
 Page {
     Container {
         Label {
@@ -11,17 +9,15 @@ Page {
         Button {
             text: "change graph!"
             onClicked: {
-                _chartManager.changePicture()
-                }
+                _chartManager.drawChart()
+            }
         }
         ImageView {
-            objectName: "myImage";
             id: myImage
             image: _chartManager.image
+            horizontalAlignment: HorizontalAlignment.Fill
+            implicitLayoutAnimationsEnabled: false
         }
-    }
-//    onCreationCompleted: {
-//        //console.log("foi!")
-//    }
-}
 
+    }
+}
